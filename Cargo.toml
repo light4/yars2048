@@ -9,7 +9,7 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-bevy = { version = "0.7.0-dev", default-features = false, features = ["bevy_winit", "render", "bevy_ui", "png" }
+bevy = { version = "0.7.0-dev", default-features = false, features = ["bevy_winit", "render", "bevy_ui", "png"] }
 bevy_easings = "0.7.0-dev"
 itertools = "0.10.3"
 rand = "0.8.5"
