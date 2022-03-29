@@ -25,7 +25,7 @@ struct Materials {
 }
 
 #[bevy_main]
-fn main() {
+pub fn main() {
     App::new()
         .insert_resource(WindowDescriptor {
             title: "Yars 2048".to_string(),
