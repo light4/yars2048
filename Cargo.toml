@@ -1,0 +1,43 @@
+[package]
+name = "yars2048"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+bevy = { version = "0.7.0-dev", default-features = false, features = ["bevy_winit", "render", "bevy_ui", "png" }
+bevy_easings = "0.7.0-dev"
+itertools = "0.10.3"
+rand = "0.8.5"
+
+[package.metadata.android]
+assets = "assets"
+resources = "assets/android-res"
+apk_label = "Yars2048"
+
+# Specifies the array of targets to build for.
+build_targets = ["aarch64-linux-android", "x86_64-linux-android"]
+
+apk_name = "Yars2048"
+
+[package.metadata.android.sdk]
+min_sdk_version = 28
+target_sdk_version = 30
+max_sdk_version = 32
+
+[package.metadata.android.application]
+label = "Yars2048"
+icon = "@mipmap/ic_launcher"
+
+[package.metadata.android.application.activity]
+exported = "true"
+
+[patch.crates-io]
+# https://github.com/light4/bevy/commits/fix_android
+bevy = { git = "https://github.com/light4/bevy.git", rev = "6ce45ad" }
+# https://github.com/light4/bevy_easings/commits/0.7.0-dev
+bevy_easings = { git = "https://github.com/light4/bevy_easings.git", rev = "fdd6ca6" }
