@@ -18,10 +18,10 @@ const TILE_SIZE: f32 = 60.0;
 
 pub struct NewTileEvent;
 
-struct Materials {
-    board: Handle<ColorMaterial>,
-    tile_placeholder: Handle<ColorMaterial>,
-    block: Handle<ColorMaterial>,
+struct Palette {
+    board: Color,
+    tile_placeholder: Color,
+    block: Color,
 }
 
 #[bevy_main]
@@ -56,22 +56,18 @@ pub fn main() {
         .run();
 }
 
-fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
+fn setup(mut commands: Commands) {
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
     commands.spawn_bundle(UiCameraBundle::default());
 
-    commands.insert_resource(Materials {
-        board: materials.add(Color::rgb(0.7, 0.7, 0.8).into()),
-        tile_placeholder: materials.add(Color::rgb(0.75, 0.75, 0.9).into()),
-        block: materials.add(Color::rgb(0.9, 0.9, 1.0).into()),
+    commands.insert_resource(Palette {
+        board: Color::rgb(0.7, 0.7, 0.8),
+        tile_placeholder: Color::rgb(0.75, 0.75, 0.9),
+        block: Color::rgb(0.9, 0.9, 1.0),
     });
 }
 
-fn spawn_board(
-    mut commands: Commands,
-    assets: ResMut<Assets<ColorMaterial>>,
-    materials: Res<Materials>,
-) {
+fn spawn_board(mut commands: Commands, palette: Res<Palette>) {
     let board = Board { size: 4 };
     let physical_board_size = {
         // size of all tiles
@@ -86,7 +82,7 @@ fn spawn_board(
         .spawn_bundle(SpriteBundle {
             sprite: Sprite {
                 custom_size: Some(Vec2::new(physical_board_size, physical_board_size)),
-                color: assets.get(materials.board.clone()).unwrap().color,
+                color: palette.board,
                 ..Default::default()
             },
             ..Default::default()
@@ -96,10 +92,7 @@ fn spawn_board(
                 child_builder.spawn_bundle(SpriteBundle {
                     sprite: Sprite {
                         custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
-                        color: assets
-                            .get(materials.tile_placeholder.clone())
-                            .unwrap()
-                            .color,
+                        color: palette.tile_placeholder,
                         ..Default::default()
                     },
                     transform: Transform::from_xyz(
@@ -139,10 +132,9 @@ fn game_reset(mut commands: Commands, blocks: Query<Entity, With<Block>>, mut ga
 
 fn spawn_tiles(
     mut commands: Commands,
-    materials: Res<Materials>,
+    palette: Res<Palette>,
     query_board: Query<&Board>,
     asset_server: Res<AssetServer>,
-    assets: Res<Assets<ColorMaterial>>,
 ) {
     let font = asset_server.load("fonts/FiraSans-Bold.ttf");
     let board = query_board.single();
@@ -161,7 +153,7 @@ fn spawn_tiles(
             .spawn_bundle(SpriteBundle {
                 sprite: Sprite {
                     custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
-                    color: assets.get(materials.block.clone()).unwrap().color,
+                    color: palette.block,
                     ..Default::default()
                 },
                 transform: Transform::from_xyz(
@@ -258,6 +250,7 @@ fn should_merge(block: (u32, u8), block_next: (u32, u8)) -> MergeStatus {
         MergeStatus::Merge
     }
 }
+
 fn board_shift(
     mut commands: Commands,
     keyboard_input: Res<Input<KeyCode>>,
@@ -666,9 +659,8 @@ fn new_tile_handler(
     mut commands: Commands,
     query_board: Query<&Board>,
     asset_server: Res<AssetServer>,
-    materials: Res<Materials>,
+    palette: Res<Palette>,
     blocks: Query<(&Position, &Block)>,
-    assets: Res<Assets<ColorMaterial>>,
 ) {
     let font = asset_server.load("fonts/FiraSans-Bold.ttf");
     let board = query_board.single();
@@ -696,7 +688,7 @@ fn new_tile_handler(
                     .spawn_bundle(SpriteBundle {
                         sprite: Sprite {
                             custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
-                            color: assets.get(materials.block.clone()).unwrap().color,
+                            color: palette.block,
                             ..Default::default()
                         },
                         transform: Transform::from_xyz(
