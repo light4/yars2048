@@ -275,30 +275,27 @@ fn board_shift(
         for (_, position, block, _) in blocks.iter_mut() {
             map.insert((position.x, position.y), block.value);
         }
-        let has_move = map
-            .iter()
-            .find(|((x, y), value)| {
-                vec![(-1, 0), (0, 1), (1, 0), (0, -1)]
-                    .iter()
-                    .flat_map(|(x2, y2)| {
-                        let new_x = (*x as i8) - x2;
-                        let new_y = (*y as i8) - y2;
+        let has_move = map.iter().any(|((x, y), value)| {
+            vec![(-1, 0), (0, 1), (1, 0), (0, -1)]
+                .iter()
+                .flat_map(|(x2, y2)| {
+                    let new_x = (*x as i8) - x2;
+                    let new_y = (*y as i8) - y2;
 
-                        let board_range: Range<i8> = 0..(board.size as i8);
+                    let board_range: Range<i8> = 0..(board.size as i8);
 
-                        if !board_range.contains(&new_x) && !board_range.contains(&new_y) {
-                            return None;
-                        };
+                    if !board_range.contains(&new_x) && !board_range.contains(&new_y) {
+                        return None;
+                    };
 
-                        match (new_x.try_into(), new_y.try_into()) {
-                            (Ok(x), Ok(y)) => Some(map.get(&(x, y))),
-                            _ => None,
-                        }
-                    })
-                    .flatten()
-                    .any(|v| v == *value)
-            })
-            .is_some();
+                    match (new_x.try_into(), new_y.try_into()) {
+                        (Ok(x), Ok(y)) => Some(map.get(&(x, y))),
+                        _ => None,
+                    }
+                })
+                .flatten()
+                .any(|v| v == value)
+        });
 
         if !has_move {
             run_state.set(RunState::GameOver).unwrap();
