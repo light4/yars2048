@@ -149,6 +149,7 @@ fn spawn_tiles(
         .choose_multiple(&mut rng, 2);
     for Position { x, y } in starting_tiles.iter() {
         let pos = Position { x: *x, y: *y };
+        let new_block = Block { value: 2 };
         commands
             .spawn_bundle(SpriteBundle {
                 sprite: Sprite {
@@ -167,7 +168,7 @@ fn spawn_tiles(
                 child_builder
                     .spawn_bundle(Text2dBundle {
                         text: Text::with_section(
-                            "2",
+                            new_block.value.to_string(),
                             TextStyle {
                                 font: font.clone(),
                                 font_size: 40.0,
@@ -183,7 +184,7 @@ fn spawn_tiles(
                     })
                     .insert(BlockText);
             })
-            .insert(Block { value: 2 })
+            .insert(new_block)
             .insert(pos);
     }
 }
@@ -681,6 +682,7 @@ fn new_tile_handler(
 
         match possible_position {
             Some(pos) => {
+                let new_block = Block { value: 2 };
                 commands
                     .spawn_bundle(SpriteBundle {
                         sprite: Sprite {
@@ -699,7 +701,7 @@ fn new_tile_handler(
                         child_builder
                             .spawn_bundle(Text2dBundle {
                                 text: Text::with_section(
-                                    "2",
+                                    new_block.value.to_string(),
                                     TextStyle {
                                         font: font.clone(),
                                         font_size: 40.0,
@@ -715,7 +717,7 @@ fn new_tile_handler(
                             })
                             .insert(BlockText);
                     })
-                    .insert(Block { value: 2 })
+                    .insert(new_block)
                     .insert(pos);
             }
             None => (),
