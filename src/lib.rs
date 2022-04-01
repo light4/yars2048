@@ -21,7 +21,6 @@ pub struct NewTileEvent;
 struct Palette {
     board: Color,
     tile_placeholder: Color,
-    block: Color,
 }
 
 #[bevy_main]
@@ -44,6 +43,7 @@ pub fn main() {
             SystemSet::on_update(RunState::Playing)
                 .with_system(board_shift)
                 .with_system(render_blocks)
+                .with_system(render_block_color)
                 .with_system(new_tile_handler),
         )
         // setup when entering the state
@@ -61,9 +61,8 @@ fn setup(mut commands: Commands) {
     commands.spawn_bundle(UiCameraBundle::default());
 
     commands.insert_resource(Palette {
-        board: Color::rgb(0.7, 0.7, 0.8),
-        tile_placeholder: Color::rgb(0.75, 0.75, 0.9),
-        block: Color::rgb(0.9, 0.9, 1.0),
+        board: Color::rgb_u8(187, 173, 160),
+        tile_placeholder: Color::rgb_u8(214, 205, 196),
     });
 }
 
@@ -89,15 +88,20 @@ fn spawn_board(mut commands: Commands, palette: Res<Palette>) {
         })
         .with_children(|child_builder| {
             for tile in (0..board.size).cartesian_product(0..board.size) {
-                child_builder.spawn_bundle(SpriteBundle {
-                    sprite: Sprite {
-                        custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
-                        color: palette.tile_placeholder,
-                        ..Default::default()
-                    },
-                    transform: Transform::from_xyz(
-                        // true position
-                        f32::from(tile.0) * TILE_SIZE
+                let position = Position {
+                    x: tile.0,
+                    y: tile.1,
+                };
+                child_builder
+                    .spawn_bundle(SpriteBundle {
+                        sprite: Sprite {
+                            custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
+                            color: palette.tile_placeholder,
+                            ..Default::default()
+                        },
+                        transform: Transform::from_xyz(
+                            // true position
+                            f32::from(tile.0) * TILE_SIZE
                         // moved left because it is at board center
                             - (f32::from(board.size)
                                 * TILE_SIZE
@@ -109,15 +113,18 @@ fn spawn_board(mut commands: Commands, palette: Res<Palette>) {
                             // spacers
                             + f32::from(tile.0)
                                 * TILE_SPACER
-                            - TILE_SPACER * 1.5,
-                        f32::from(tile.1) * TILE_SIZE - (f32::from(board.size) * TILE_SIZE / 2.0)
-                            + (0.5 * TILE_SIZE)
-                            + f32::from(tile.1) * TILE_SPACER
-                            - TILE_SPACER * 1.5,
-                        1.0,
-                    ),
-                    ..Default::default()
-                });
+                                - TILE_SPACER * 1.5,
+                            f32::from(tile.1) * TILE_SIZE
+                                - (f32::from(board.size) * TILE_SIZE / 2.0)
+                                + (0.5 * TILE_SIZE)
+                                + f32::from(tile.1) * TILE_SPACER
+                                - TILE_SPACER * 1.5,
+                            1.0,
+                        ),
+                        ..Default::default()
+                    })
+                    .insert(position)
+                    .insert(EmptyBlock);
             }
         })
         .insert(board);
@@ -130,12 +137,7 @@ fn game_reset(mut commands: Commands, blocks: Query<Entity, With<Block>>, mut ga
     game.score = 0;
 }
 
-fn spawn_tiles(
-    mut commands: Commands,
-    palette: Res<Palette>,
-    query_board: Query<&Board>,
-    asset_server: Res<AssetServer>,
-) {
+fn spawn_tiles(mut commands: Commands, query_board: Query<&Board>, asset_server: Res<AssetServer>) {
     let font = asset_server.load("fonts/FiraSans-Bold.ttf");
     let board = query_board.single();
     // insert new tile
@@ -149,12 +151,12 @@ fn spawn_tiles(
         .choose_multiple(&mut rng, 2);
     for Position { x, y } in starting_tiles.iter() {
         let pos = Position { x: *x, y: *y };
-        let new_block = Block { value: 2 };
+        let new_block = Block::default();
         commands
             .spawn_bundle(SpriteBundle {
                 sprite: Sprite {
                     custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
-                    color: palette.block,
+                    color: new_block.color(),
                     ..Default::default()
                 },
                 transform: Transform::from_xyz(
@@ -168,7 +170,7 @@ fn spawn_tiles(
                 child_builder
                     .spawn_bundle(Text2dBundle {
                         text: Text::with_section(
-                            new_block.value.to_string(),
+                            new_block.score().to_string(),
                             TextStyle {
                                 font: font.clone(),
                                 font_size: 40.0,
@@ -227,6 +229,12 @@ fn render_blocks(
     }
 }
 
+fn render_block_color(mut block_sprite: Query<(&mut Sprite, &Block), With<Block>>) {
+    for (mut sp, block) in block_sprite.iter_mut() {
+        sp.color = block.color();
+    }
+}
+
 #[derive(Debug)]
 enum MergeStatus {
     Merge,
@@ -274,7 +282,7 @@ fn board_shift(
             map.insert(tile, 0);
         }
         for (_, position, block, _) in blocks.iter_mut() {
-            map.insert((position.x, position.y), block.value);
+            map.insert((position.x, position.y), block.level);
         }
         let has_move = map.iter().any(|((x, y), value)| {
             vec![(-1, 0), (0, 1), (1, 0), (0, -1)]
@@ -359,8 +367,8 @@ fn board_shift(
                 }
                 (Some(mut block), Some(block_next)) => {
                     match should_merge(
-                        (block.2.value, block.1.y),
-                        (block_next.2.value, block_next.1.y),
+                        (block.2.level, block.1.y),
+                        (block_next.2.level, block_next.1.y),
                     ) {
                         MergeStatus::Merge => {
                             // despawn the next block, and
@@ -369,11 +377,11 @@ fn board_shift(
                             let real_next_block = it
                                 .next()
                                 .expect("A peeked block should always exist when we .next here");
-                            block.2.value += real_next_block.2.value;
+                            block.2.level += 1;
                             block.1.x = x;
 
                             // update score
-                            game.score += block.2.value;
+                            game.score += block.2.score();
                             // update text
                             for child in block.3.iter() {
                                 let mut text = texts.get_mut(*child).expect("text to exist");
@@ -382,7 +390,7 @@ fn board_shift(
                                     .sections
                                     .first_mut()
                                     .expect("expect a single section in text");
-                                section.value = block.2.value.to_string();
+                                section.value = block.2.score().to_string();
                             }
                             // if the next, next block
                             // (block #3 of 3)
@@ -438,18 +446,18 @@ fn board_shift(
                 }
                 (Some(mut block), Some(block_next)) => {
                     match should_merge(
-                        (block.2.value, block.1.y),
-                        (block_next.2.value, block_next.1.y),
+                        (block.2.level, block.1.y),
+                        (block_next.2.level, block_next.1.y),
                     ) {
                         MergeStatus::Merge => {
                             let real_next_block = it
                                 .next()
                                 .expect("A peeked block should always exist when we .next here");
-                            block.2.value += real_next_block.2.value;
+                            block.2.level += 1;
                             block.1.x = board.size - 1 - x;
 
                             // update score
-                            game.score += block.2.value;
+                            game.score += block.2.score();
                             // update text
                             for child in block.3.iter() {
                                 let mut text = texts.get_mut(*child).expect("text to exist");
@@ -458,7 +466,7 @@ fn board_shift(
                                     .sections
                                     .first_mut()
                                     .expect("expect a single section in text");
-                                section.value = block.2.value.to_string();
+                                section.value = block.2.score().to_string();
                             }
 
                             if let Some(future) = it.peek() {
@@ -510,8 +518,8 @@ fn board_shift(
                 }
                 (Some(mut block), Some(block_next)) => {
                     match should_merge(
-                        (block.2.value, block.1.x),
-                        (block_next.2.value, block_next.1.x),
+                        (block.2.level, block.1.x),
+                        (block_next.2.level, block_next.1.x),
                     ) {
                         MergeStatus::Merge => {
                             // _recursive the next block,
@@ -521,11 +529,11 @@ fn board_shift(
                             let real_next_block = it
                                 .next()
                                 .expect("A peeked block should always exist when we .next here");
-                            block.2.value += real_next_block.2.value;
+                            block.2.level += 1;
                             block.1.y = y;
 
                             // update score
-                            game.score += block.2.value;
+                            game.score += block.2.score();
                             // update text
                             for child in block.3.iter() {
                                 let mut text = texts.get_mut(*child).expect("text to exist");
@@ -534,7 +542,7 @@ fn board_shift(
                                     .sections
                                     .first_mut()
                                     .expect("expect a single section in text");
-                                section.value = block.2.value.to_string();
+                                section.value = block.2.score().to_string();
                             }
                             // if the next, next block
                             // (block #3 of 3)
@@ -589,8 +597,8 @@ fn board_shift(
                 }
                 (Some(mut block), Some(block_next)) => {
                     match should_merge(
-                        (block.2.value, block.1.x),
-                        (block_next.2.value, block_next.1.x),
+                        (block.2.level, block.1.x),
+                        (block_next.2.level, block_next.1.x),
                     ) {
                         MergeStatus::Merge => {
                             // despawn the next block, and
@@ -599,11 +607,11 @@ fn board_shift(
                             let real_next_block = it
                                 .next()
                                 .expect("A peeked block should always exist when we .next here");
-                            block.2.value += real_next_block.2.value;
+                            block.2.level += 1;
                             block.1.y = board.size - 1 - y;
 
                             // update score
-                            game.score += block.2.value;
+                            game.score += block.2.score();
                             // update text
                             for child in block.3.iter() {
                                 let mut text = texts.get_mut(*child).expect("text to exist");
@@ -612,7 +620,7 @@ fn board_shift(
                                     .sections
                                     .first_mut()
                                     .expect("expect a single section in text");
-                                section.value = block.2.value.to_string();
+                                section.value = block.2.score().to_string();
                             }
                             // if the next, next block
                             // (block #3 of 3)
@@ -657,7 +665,6 @@ fn new_tile_handler(
     mut commands: Commands,
     query_board: Query<&Board>,
     asset_server: Res<AssetServer>,
-    palette: Res<Palette>,
     blocks: Query<(&Position, &Block)>,
 ) {
     let font = asset_server.load("fonts/FiraSans-Bold.ttf");
@@ -666,61 +673,54 @@ fn new_tile_handler(
     if tile_reader.iter().next().is_some() {
         // insert new tile
         let mut rng = rand::thread_rng();
-        let possible_position: Option<Position> = (0..board.size)
+        let possible_position = (0..board.size)
             .cartesian_product(0..board.size)
-            .filter_map(|tile_pos| {
-                let new_pos = Position {
-                    x: tile_pos.0,
-                    y: tile_pos.1,
-                };
-                match blocks.iter().find(|(pos, _)| **pos == new_pos) {
-                    Some(_) => None,
-                    None => Some(new_pos),
-                }
+            .filter(|tile_pos| {
+                !blocks
+                    .iter()
+                    .any(|(pos, _)| pos.x == tile_pos.0 && pos.y == tile_pos.1)
             })
             .choose(&mut rng);
 
-        match possible_position {
-            Some(pos) => {
-                let new_block = Block { value: 2 };
-                commands
-                    .spawn_bundle(SpriteBundle {
-                        sprite: Sprite {
-                            custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
-                            color: palette.block,
-                            ..Default::default()
-                        },
-                        transform: Transform::from_xyz(
-                            block_pos_to_transform(board.size, pos.x),
-                            block_pos_to_transform(board.size, pos.y),
-                            1.0,
-                        ),
+        if let Some((x, y)) = possible_position {
+            let pos = Position { x, y };
+            let new_block = Block::default();
+            commands
+                .spawn_bundle(SpriteBundle {
+                    sprite: Sprite {
+                        custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
+                        color: new_block.color(),
                         ..Default::default()
-                    })
-                    .with_children(|child_builder| {
-                        child_builder
-                            .spawn_bundle(Text2dBundle {
-                                text: Text::with_section(
-                                    new_block.value.to_string(),
-                                    TextStyle {
-                                        font: font.clone(),
-                                        font_size: 40.0,
-                                        color: Color::BLACK,
-                                    },
-                                    TextAlignment {
-                                        vertical: VerticalAlign::Center,
-                                        horizontal: HorizontalAlign::Center,
-                                    },
-                                ),
-                                transform: Transform::from_xyz(0.0, 0.0, 1.0),
-                                ..Default::default()
-                            })
-                            .insert(BlockText);
-                    })
-                    .insert(new_block)
-                    .insert(pos);
-            }
-            None => (),
-        }
-    }
+                    },
+                    transform: Transform::from_xyz(
+                        block_pos_to_transform(board.size, pos.x),
+                        block_pos_to_transform(board.size, pos.y),
+                        1.0,
+                    ),
+                    ..Default::default()
+                })
+                .with_children(|child_builder| {
+                    child_builder
+                        .spawn_bundle(Text2dBundle {
+                            text: Text::with_section(
+                                new_block.score().to_string(),
+                                TextStyle {
+                                    font: font.clone(),
+                                    font_size: 40.0,
+                                    color: Color::BLACK,
+                                },
+                                TextAlignment {
+                                    vertical: VerticalAlign::Center,
+                                    horizontal: HorizontalAlign::Center,
+                                },
+                            ),
+                            transform: Transform::from_xyz(0.0, 0.0, 1.0),
+                            ..Default::default()
+                        })
+                        .insert(BlockText);
+                })
+                .insert(new_block)
+                .insert(pos);
+        };
+    };
 }

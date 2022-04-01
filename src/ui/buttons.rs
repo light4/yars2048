@@ -11,9 +11,9 @@ pub struct ButtonColors {
 impl FromWorld for ButtonColors {
     fn from_world(_: &mut World) -> Self {
         ButtonColors {
-            normal: Color::rgb(0.75, 0.75, 0.9),
-            hovered: Color::rgb(0.7, 0.7, 0.9),
-            pressed: Color::rgb(0.6, 0.6, 1.0),
+            normal: Color::rgb(0.73, 0.68, 0.63),
+            hovered: Color::rgb(0.93, 0.81, 0.45),
+            pressed: Color::rgb(0.84, 0.80, 0.77),
         }
     }
 }

@@ -5,6 +5,8 @@ use bevy::prelude::*;
 use crate::components::{BestScoreDisplay, Game, ScoreDisplay};
 use buttons::{button_system, ButtonColors};
 
+const BACKGROUND_COLOR: Color = Color::rgb(0.73, 0.68, 0.63);
+
 pub struct GameUiPlugin;
 
 impl Plugin for GameUiPlugin {
@@ -82,7 +84,7 @@ fn setup_ui(
                                 border: Rect::all(Val::Px(10.0)),
                                 ..Default::default()
                             },
-                            color: Color::rgb(0.75, 0.75, 0.9).into(),
+                            color: BACKGROUND_COLOR.into(),
                             ..Default::default()
                         })
                         .with_children(|parent| {
@@ -131,7 +133,7 @@ fn setup_ui(
                                 border: Rect::all(Val::Px(10.0)),
                                 ..Default::default()
                             },
-                            color: Color::rgb(0.75, 0.75, 0.9).into(),
+                            color: BACKGROUND_COLOR.into(),
                             ..Default::default()
                         })
                         .with_children(|parent| {
@@ -198,7 +200,7 @@ fn setup_ui(
                             TextStyle {
                                 font: font.clone(),
                                 font_size: 20.0,
-                                color: Color::rgb(0.9, 0.9, 0.9),
+                                color: Color::WHITE,
                             },
                             Default::default(),
                         ),
