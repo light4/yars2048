@@ -28,7 +28,7 @@ pub fn main() {
     App::new()
         .insert_resource(WindowDescriptor {
             title: "Yars 2048".to_string(),
-            ..Default::default()
+            ..default()
         })
         .insert_resource(ClearColor(Color::rgb(0.04, 0.04, 0.1)))
         .init_resource::<Game>()
@@ -49,8 +49,8 @@ pub fn main() {
         // setup when entering the state
         .add_system_set(
             SystemSet::on_enter(RunState::Playing)
-                .with_system(game_reset.label("reset"))
-                .with_system(spawn_tiles.after("reset")),
+                .with_system(game_reset)
+                .with_system(spawn_tiles.after(game_reset)),
         )
         .add_event::<NewTileEvent>()
         .run();
@@ -82,9 +82,9 @@ fn spawn_board(mut commands: Commands, palette: Res<Palette>) {
             sprite: Sprite {
                 custom_size: Some(Vec2::new(physical_board_size, physical_board_size)),
                 color: palette.board,
-                ..Default::default()
+                ..default()
             },
-            ..Default::default()
+            ..default()
         })
         .with_children(|child_builder| {
             for tile in (0..board.size).cartesian_product(0..board.size) {
@@ -97,7 +97,7 @@ fn spawn_board(mut commands: Commands, palette: Res<Palette>) {
                         sprite: Sprite {
                             custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
                             color: palette.tile_placeholder,
-                            ..Default::default()
+                            ..default()
                         },
                         transform: Transform::from_xyz(
                             // true position
@@ -121,7 +121,7 @@ fn spawn_board(mut commands: Commands, palette: Res<Palette>) {
                                 - TILE_SPACER * 1.5,
                             1.0,
                         ),
-                        ..Default::default()
+                        ..default()
                     })
                     .insert(position)
                     .insert(EmptyBlock);
@@ -157,14 +157,14 @@ fn spawn_tiles(mut commands: Commands, query_board: Query<&Board>, asset_server:
                 sprite: Sprite {
                     custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
                     color: new_block.color(),
-                    ..Default::default()
+                    ..default()
                 },
                 transform: Transform::from_xyz(
                     block_pos_to_transform(board.size, pos.x),
                     block_pos_to_transform(board.size, pos.y),
                     1.0,
                 ),
-                ..Default::default()
+                ..default()
             })
             .with_children(|child_builder| {
                 child_builder
@@ -182,7 +182,7 @@ fn spawn_tiles(mut commands: Commands, query_board: Query<&Board>, asset_server:
                             },
                         ),
                         transform: Transform::from_xyz(0.0, 0.0, 1.0),
-                        ..Default::default()
+                        ..default()
                     })
                     .insert(BlockText);
             })
@@ -690,14 +690,14 @@ fn new_tile_handler(
                     sprite: Sprite {
                         custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
                         color: new_block.color(),
-                        ..Default::default()
+                        ..default()
                     },
                     transform: Transform::from_xyz(
                         block_pos_to_transform(board.size, pos.x),
                         block_pos_to_transform(board.size, pos.y),
                         1.0,
                     ),
-                    ..Default::default()
+                    ..default()
                 })
                 .with_children(|child_builder| {
                     child_builder
@@ -715,7 +715,7 @@ fn new_tile_handler(
                                 },
                             ),
                             transform: Transform::from_xyz(0.0, 0.0, 1.0),
-                            ..Default::default()
+                            ..default()
                         })
                         .insert(BlockText);
                 })

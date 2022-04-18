@@ -32,10 +32,10 @@ fn setup_ui(
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::FlexEnd,
                 border: Rect::all(Val::Px(50.0)),
-                ..Default::default()
+                ..default()
             },
             color: Color::NONE.into(),
-            ..Default::default()
+            ..default()
         })
         .with_children(|parent| {
             parent.spawn_bundle(TextBundle {
@@ -51,7 +51,7 @@ fn setup_ui(
                         horizontal: HorizontalAlign::Center,
                     },
                 ),
-                ..Default::default()
+                ..default()
             });
 
             parent
@@ -61,10 +61,10 @@ fn setup_ui(
                         align_items: AlignItems::FlexEnd,
                         justify_content: JustifyContent::Center,
                         size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
-                        ..Default::default()
+                        ..default()
                     },
                     color: Color::NONE.into(),
-                    ..Default::default()
+                    ..default()
                 })
                 .with_children(|parent| {
                     // scorebox
@@ -82,10 +82,10 @@ fn setup_ui(
                                     bottom: Val::Px(0.0),
                                 },
                                 border: Rect::all(Val::Px(10.0)),
-                                ..Default::default()
+                                ..default()
                             },
                             color: BACKGROUND_COLOR.into(),
-                            ..Default::default()
+                            ..default()
                         })
                         .with_children(|parent| {
                             parent.spawn_bundle(TextBundle {
@@ -101,7 +101,7 @@ fn setup_ui(
                                         horizontal: HorizontalAlign::Center,
                                     },
                                 ),
-                                ..Default::default()
+                                ..default()
                             });
                             parent
                                 .spawn_bundle(TextBundle {
@@ -117,7 +117,7 @@ fn setup_ui(
                                             horizontal: HorizontalAlign::Center,
                                         },
                                     ),
-                                    ..Default::default()
+                                    ..default()
                                 })
                                 .insert(ScoreDisplay);
                         });
@@ -131,10 +131,10 @@ fn setup_ui(
                                 align_items: AlignItems::Center,
                                 size: Size::new(Val::Px(100.0), Val::Px(60.0)),
                                 border: Rect::all(Val::Px(10.0)),
-                                ..Default::default()
+                                ..default()
                             },
                             color: BACKGROUND_COLOR.into(),
-                            ..Default::default()
+                            ..default()
                         })
                         .with_children(|parent| {
                             parent.spawn_bundle(TextBundle {
@@ -150,7 +150,7 @@ fn setup_ui(
                                         horizontal: HorizontalAlign::Center,
                                     },
                                 ),
-                                ..Default::default()
+                                ..default()
                             });
                             parent
                                 .spawn_bundle(TextBundle {
@@ -166,7 +166,7 @@ fn setup_ui(
                                             horizontal: HorizontalAlign::Center,
                                         },
                                     ),
-                                    ..Default::default()
+                                    ..default()
                                 })
                                 .insert(BestScoreDisplay);
                         });
@@ -188,10 +188,10 @@ fn setup_ui(
                             top: Val::Px(20.0),
                             bottom: Val::Px(20.0),
                         },
-                        ..Default::default()
+                        ..default()
                     },
                     color: button_colors.normal.into(),
-                    ..Default::default()
+                    ..default()
                 })
                 .with_children(|parent| {
                     parent.spawn_bundle(TextBundle {
@@ -202,9 +202,9 @@ fn setup_ui(
                                 font_size: 20.0,
                                 color: Color::WHITE,
                             },
-                            Default::default(),
+                            default(),
                         ),
-                        ..Default::default()
+                        ..default()
                     });
                 });
         });
@@ -213,16 +213,16 @@ fn setup_ui(
 // update the score displayed during the game
 fn scoreboard(
     game: Res<Game>,
-    mut query_scores: QuerySet<(
-        QueryState<&mut Text, With<ScoreDisplay>>,
-        QueryState<&mut Text, With<BestScoreDisplay>>,
+    mut query_scores: ParamSet<(
+        Query<&mut Text, With<ScoreDisplay>>,
+        Query<&mut Text, With<BestScoreDisplay>>,
     )>,
 ) {
-    let mut q0 = query_scores.q0();
-    let mut text = q0.single_mut();
+    let mut p0 = query_scores.p0();
+    let mut text = p0.single_mut();
     text.sections[0].value = game.score.to_string();
 
-    let mut q1 = query_scores.q1();
-    let mut best_text = q1.single_mut();
+    let mut p1 = query_scores.p1();
+    let mut best_text = p1.single_mut();
     best_text.sections[0].value = game.score_best.to_string();
 }

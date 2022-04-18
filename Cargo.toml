@@ -9,8 +9,8 @@ edition = "2021"
 crate-type = ["lib", "cdylib"]
 
 [dependencies]
-bevy = { version = "0.7.0-dev", default-features = false, features = ["bevy_winit", "render", "bevy_ui", "png", "x11"] }
-bevy_easings = "0.7.0-dev"
+bevy = { version = "0.8.0-dev", default-features = false, features = ["bevy_winit", "render", "bevy_ui", "png", "x11"] }
+bevy_easings = "0.8.0-dev"
 itertools = "0.10.3"
 rand = "0.8.5"
 
@@ -38,6 +38,6 @@ exported = "true"
 
 [patch.crates-io]
 # https://github.com/light4/bevy/commits/fix_android
-bevy = { git = "https://github.com/light4/bevy.git", rev = "6ce45ad" }
+bevy = { git = "https://github.com/light4/bevy.git", rev = "e0f2644" }
 # https://github.com/light4/bevy_easings/commits/0.7.0-dev
-bevy_easings = { git = "https://github.com/light4/bevy_easings.git", rev = "fdd6ca6" }
+bevy_easings = { git = "https://github.com/light4/bevy_easings.git", rev = "e86029c" }
